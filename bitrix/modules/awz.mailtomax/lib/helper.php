@@ -50,18 +50,20 @@ class Helper {
         if(!$tokenAr['chat_id']) $result->setError(new Error("chat_id is required"));
 
         if(empty($result->getErrors())){
-            $url = 'https://botapi.max.ru/v1/bots/'.$tokenAr['token'].'/messages';
+            $url = 'https://platform-api.max.ru/messages?chat_id='.$tokenAr['chat_id'].'&disable_link_preview=true';
 
             $httpClient = new HttpClient();
             $httpClient->disableSslVerification();
+            $httpClient->setHeader('Authorization', $tokenAr['token']);
+            $httpClient->setHeader('Content-Type', "application/json");
 
             $processedMessage = self::htmlToText($mess);
             $postParams = array(
-                'user_id'    => $tokenAr['chat_id'],
-                'text'       => $processedMessage
+                'text'       => $processedMessage,
+                'format' => 'html'
             );
 
-            $r = $httpClient->post($url, $postParams);
+            $r = $httpClient->post($url, \Bitrix\Main\Web\Json::encode($postParams));
 
             try{
                 $jsonData = \Bitrix\Main\Web\Json::decode($r);
@@ -69,18 +71,18 @@ class Helper {
                 $jsonData = [];
             }
 
-            if(isset($jsonData['error_code'])){
+            if(isset($jsonData['message']) && isset($jsonData['code'])){
                 \CEventLog::Add(
                     array(
                         'SEVERITY' => 'DEBUG',
                         'AUDIT_TYPE_ID' => 'RESPONSE',
                         'MODULE_ID' => self::MODULE_ID,
-                        'DESCRIPTION' => print_r([$jsonData['description'], $postParams], true)
+                        'DESCRIPTION' => print_r([$jsonData, $postParams], true)
                     )
                 );
-                $postParams['text'] = $jsonData['description']."\n\n".$postParams['text'];
+                unset($postParams['html']);
+                $postParams['text'] = $jsonData['message']."\n\n".$postParams['text'];
                 $r = $httpClient->post($url, $postParams);
-
             }
 
             $result->setData(['response'=>$r]);

@@ -44,6 +44,7 @@ if ($request->getRequestMethod()==='POST' && AccessController::isEditSettings() 
     Option::set($module_id, "OPTS", serialize($finOptions), "");
     Option::set($module_id, "TGKEY", $request->get('TGKEY'), "");
     Option::set($module_id, "TGID", $request->get('TGID'), "");
+    Option::set($module_id, "DISABLED", $request->get('DISABLED') === 'Y' ? 'Y' : 'N', "");
 
     $hookKey = Option::get($module_id, "HOOK_KEY", "", "");
     $tgChat = Option::get($module_id, "TGID", "", "");
@@ -88,6 +89,26 @@ if ($request->getRequestMethod()==='POST' && AccessController::isEditSettings() 
     }
 }
 
+$botLink = '';
+$tgKey = Option::get($module_id, "TGKEY", "", "");
+if (!empty($tgKey)){
+    $httpClient = new \Bitrix\Main\Web\HttpClient();
+    $httpClient->disableSslVerification();
+    $httpClient->setHeader('Authorization', $tgKey);
+    $httpClient->setHeader('Content-Type', "application/json");
+    $maxApiUrl = 'https://platform-api.max.ru' ;
+    $response = $httpClient->get($maxApiUrl. '/me');
+    try{
+        $resMax = \Bitrix\Main\Web\Json::decode($response);
+        if(isset($resMax['username'])){
+            $botLink = 'https://max.ru/'.$resMax['username'];
+        }
+    }catch (\Exception $e){
+
+    }
+
+}
+
 $aTabs = array();
 
 $aTabs[] = array(
@@ -108,6 +129,13 @@ $tabControl->Begin();
         Extension::load("ui.alerts");
         ?>
         <tr>
+            <td style="width:200px;"><?=Loc::getMessage('AWZ_MAILTOMAX_OPT_DISABLED')?></td>
+            <td>
+                <?$val = Option::get($module_id, "DISABLED", "N",""); ?>
+                <input type="checkbox" value="Y" name="DISABLED" <?if($val === 'Y') echo "checked";?>>
+            </td>
+        </tr>
+        <tr>
             <td style="width:200px;"><?=Loc::getMessage('AWZ_MAILTOMAX_OPT_TGKEY')?></td>
             <td>
                 <?$val = Option::get($module_id, "TGKEY", "","");?>
@@ -118,7 +146,15 @@ $tabControl->Begin();
             <td style="width:200px;"><?=Loc::getMessage('AWZ_MAILTOMAX_OPT_TGID')?></td>
             <td>
                 <?$HOOK_KEY = Option::get($module_id, "HOOK_KEY", "",""); ?>
-                <?=Loc::getMessage('AWZ_MAILTOMAX_OPT_TGID_AUTO')?><br><br>
+                <?if($botLink){?>
+                    <a href="<?=$botLink?>" target="_blank"><?=$botLink?></a><br>
+                    <?=Loc::getMessage('AWZ_MAILTOMAX_OPT_TGID_AUTO_OK')?>
+                <?}elseif($HOOK_KEY){?>
+                    <?=Loc::getMessage('AWZ_MAILTOMAX_OPT_TGID_AUTO')?>
+                <?}else{?>
+                    <?=Loc::getMessage('AWZ_MAILTOMAX_OPT_TGID_NO')?>
+                <?}?>
+                <br><br>
                 <?$val = Option::get($module_id, "TGID", "",""); ?>
                 <input type="text" name="TGID" value="<?=htmlspecialcharsEx($val)?>"></td>
             </td>
