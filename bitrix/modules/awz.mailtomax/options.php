@@ -29,7 +29,10 @@ if(!AccessController::isViewSettings())
     $APPLICATION->AuthForm(Loc::getMessage("ACCESS_DENIED"));
 require($_SERVER["DOCUMENT_ROOT"]."/bitrix/modules/main/include/prolog_admin_after.php");
 
-if ($request->getRequestMethod()==='POST' && AccessController::isEditSettings() && $request->get('Update'))
+if ($request->getRequestMethod()==='POST'
+        && AccessController::isEditSettings() && $request->get('Update')
+        && check_bitrix_sessid()
+)
 {
     $finOptions = [];
     $event = $request->get('EVENT');
@@ -58,42 +61,13 @@ if ($request->getRequestMethod()==='POST' && AccessController::isEditSettings() 
     $myWebhookUrl = 'https://'.Application::getInstance()->getContext()->getRequest()->getHttpHost()
             .'/bitrix/services/main/ajax.php?action=awz:mailtomax.api.max.webhook&key='
             .$hookKey;
-
-    // Выполняем запрос к API Макс только если есть токен бота
-    if (!empty($tgKey) && false) {
-        $httpClient = new \Bitrix\Main\Web\HttpClient();
-        $httpClient->disableSslVerification();
-        $maxApiUrl = 'https://botapi.max.ru/v1/bots/' . $tgKey ;
-        $response = $httpClient->get($maxApiUrl. '/info');
-        $resHook = \Bitrix\Main\Web\Json::decode($response);
-        $urlCurrent = $resHook['result']['url'] ?? '';
-        if($urlCurrent && ($urlCurrent!=$myWebhookUrl)){
-            \CAdminMessage::ShowMessage(array('TYPE'=>'ERR',
-                    'MESSAGE'=>Loc::getMessage('AWZ_MAILTOMAX_HOOK_IS_SET')));
-        }elseif($urlCurrent){
-            \CAdminMessage::ShowMessage(array('TYPE'=>'OK',
-                    'MESSAGE'=>'Текущий хук: '.$urlCurrent));
-        }elseif (empty($tgChat)) {
-            $response = $httpClient->post($maxApiUrl. '/webhook', [
-                 'url'=>$myWebhookUrl
-            ]);
-            \CAdminMessage::ShowMessage(array('TYPE'=>'OK',
-                    'MESSAGE'=>'Текущий хук: '.$myWebhookUrl));
-        } else {
-            $response = $httpClient->post($maxApiUrl. '/webhook', [
-                    'url'=>''
-            ]);
-            \CAdminMessage::ShowMessage(array('TYPE'=>'OK',
-                    'MESSAGE'=>'Хук удален'));
-        }
-    }
 }
 
 $botLink = '';
 $tgKey = Option::get($module_id, "TGKEY", "", "");
 if (!empty($tgKey)){
     $httpClient = new \Bitrix\Main\Web\HttpClient();
-    $httpClient->disableSslVerification();
+    //$httpClient->disableSslVerification();
     $httpClient->setHeader('Authorization', $tgKey);
     $httpClient->setHeader('Content-Type', "application/json");
     $maxApiUrl = 'https://platform-api.max.ru' ;
@@ -124,6 +98,7 @@ $tabControl->Begin();
 ?>
     <style>.adm-workarea option:checked {background-color: rgb(206, 206, 206);}</style>
     <form method="POST" action="<?=$saveUrl?>" id="FORMACTION">
+        <?=bitrix_sessid_post()?>
         <?
         $tabControl->BeginNextTab();
         Extension::load("ui.alerts");

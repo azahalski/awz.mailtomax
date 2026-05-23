@@ -53,7 +53,7 @@ class Helper {
             $url = 'https://platform-api.max.ru/messages?chat_id='.$tokenAr['chat_id'].'&disable_link_preview=true';
 
             $httpClient = new HttpClient();
-            $httpClient->disableSslVerification();
+            //$httpClient->disableSslVerification();
             $httpClient->setHeader('Authorization', $tokenAr['token']);
             $httpClient->setHeader('Content-Type', "application/json");
 
