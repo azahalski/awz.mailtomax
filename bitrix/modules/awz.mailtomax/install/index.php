@@ -128,6 +128,14 @@ class awz_mailtomax extends CModule
             'main', 'OnBeforeEventSend',
             $this->MODULE_ID, '\\Awz\\Mailtomax\\Handlers', 'OnBeforeEventSend'
         );
+        $eventManager->registerEventHandlerCompatible(
+            'main', 'OnBeforeProlog',
+            $this->MODULE_ID, '\\Awz\\Mailtomax\\Handlers', 'OnBeforeProlog'
+        );
+        $eventManager->registerEventHandlerCompatible(
+            'main', 'OnAdminTabControlBegin',
+            $this->MODULE_ID, '\\Awz\\Mailtomax\\Handlers', 'OnAdminTabControlBegin'
+        );
         return true;
     }
 
@@ -145,6 +153,14 @@ class awz_mailtomax extends CModule
         $eventManager->unRegisterEventHandler(
             'main', 'OnBeforeEventSend',
             $this->MODULE_ID, '\\Awz\\Mailtomax\\Handlers', 'OnBeforeEventSend'
+        );
+        $eventManager->unRegisterEventHandler(
+            'main', 'OnBeforeProlog',
+            $this->MODULE_ID, '\\Awz\\Mailtomax\\Handlers', 'OnBeforeProlog'
+        );
+        $eventManager->unRegisterEventHandler(
+            'main', 'OnAdminTabControlBegin',
+            $this->MODULE_ID, '\\Awz\\Mailtomax\\Handlers', 'OnAdminTabControlBegin'
         );
         return true;
     }
